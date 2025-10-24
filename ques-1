@@ -1,0 +1,12 @@
+const express=require('express');
+const mongoose=require('mongoose');
+const bodyParser=require('body-parser');
+const app=express();
+app.use(bodyParser.json());
+mongoose.connect('mongodb://127.0.0.1:27017/productdb',{useNewUrlParser:true,useUnifiedTopology:true});
+const Product=mongoose.model('Product',new mongoose.Schema({name:{type:String,required:true},price:{type:Number,required:true},category:String}));
+app.post('/products',async(req,res)=>{try{const p=new Product(req.body);await p.save();res.json({message:'Product added',product:p});}catch(e){res.status(400).json({error:e.message});}});
+app.get('/products',async(req,res)=>{try{res.json(await Product.find());}catch(e){res.status(500).json({error:e.message});}});
+app.put('/products/:id',async(req,res)=>{try{const p=await Product.findByIdAndUpdate(req.params.id,req.body,{new:true,runValidators:true});if(!p)return res.status(404).json({error:'Product not found'});res.json({message:'Product updated',product:p});}catch(e){res.status(400).json({error:e.message});}});
+app.delete('/products/:id',async(req,res)=>{try{const p=await Product.findByIdAndDelete(req.params.id);if(!p)return res.status(404).json({error:'Product not found'});res.json({message:'Product deleted',product:p});}catch(e){res.status(500).json({error:e.message});}});
+app.listen(4000,()=>console.log('Product API running on port 4000'));
