@@ -1,0 +1,24 @@
+const express=require('express');
+const mongoose=require('mongoose');
+const bodyParser=require('body-parser');
+const app=express();
+app.use(bodyParser.json());
+mongoose.connect('mongodb://127.0.0.1:27017/studentdb',{useNewUrlParser:true,useUnifiedTopology:true});
+
+const Student=mongoose.model('Student',new mongoose.Schema({name:{type:String,required:true},age:{type:Number,required:true},course:{type:String,required:true}}));
+
+const studentController={
+  create:async(req,res)=>{try{const s=new Student(req.body);await s.save();res.json({message:'Student added',student:s});}catch(e){res.status(400).json({error:e.message});}},
+  getAll:async(req,res)=>{try{res.json(await Student.find());}catch(e){res.status(500).json({error:e.message});}},
+  getById:async(req,res)=>{try{const s=await Student.findById(req.params.id);if(!s)return res.status(404).json({error:'Student not found'});res.json(s);}catch(e){res.status(400).json({error:e.message});}},
+  update:async(req,res)=>{try{const s=await Student.findByIdAndUpdate(req.params.id,req.body,{new:true,runValidators:true});if(!s)return res.status(404).json({error:'Student not found'});res.json({message:'Student updated',student:s});}catch(e){res.status(400).json({error:e.message});}},
+  delete:async(req,res)=>{try{const s=await Student.findByIdAndDelete(req.params.id);if(!s)return res.status(404).json({error:'Student not found'});res.json({message:'Student deleted',student:s});}catch(e){res.status(500).json({error:e.message});}}
+};
+
+app.post('/students',studentController.create);
+app.get('/students',studentController.getAll);
+app.get('/students/:id',studentController.getById);
+app.put('/students/:id',studentController.update);
+app.delete('/students/:id',studentController.delete);
+
+app.listen(4000,()=>console.log('Student Management API running on port 4000'));
